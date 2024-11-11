@@ -1,0 +1,96 @@
+import streamlit as st
+import requests
+
+API_URL = "http://127.0.0.1:8000"
+
+# Функция для получения рекомендаций по косинусному сходству
+def get_cos_recommendations(anime_name, n_recommendations):
+    response = requests.post(f"{API_URL}/cos_recommendations/", json={
+        "anime_name": anime_name
+    })
+
+    if response.status_code == 200:
+        return response.json()["recommendations"]
+    else:
+        st.error(f"Ошибка: {response.json()['detail']}")
+        return []
+
+
+# Функция для получения рекомендаций по KNN
+def get_knn_recommendations(anime_name):
+    response = requests.post(f"{API_URL}/recommendations/", json={
+        "anime_name": anime_name,
+        "n_recommendations": 18
+    })
+
+    if response.status_code == 200:
+        return response.json()["recommendations"]
+    else:
+        st.error(f"Ошибка: {response.json()['detail']}")
+        return []
+
+
+# Функция для получения рекомендаций по жанру
+def get_genre_recommendations(genre_name, top_n):
+    response = requests.post(f"{API_URL}/genre_recommendations/", json={
+        "genre_name": genre_name,
+        "top_n": top_n
+    })
+
+    if response.status_code == 200:
+        return response.json()["recommendations"]
+    else:
+        st.error(f"Ошибка: {response.json()['detail']}")
+        return []
+
+
+# Streamlit интерфейс
+st.title('Рекомендательная система для аниме')
+
+# Раздел для рекомендаций по косинусному сходству
+st.header('Рекомендации по косинусному сходству')
+
+# Ввод названия аниме для рекомендаций по сходству
+anime_name_cos = st.text_input("Введите название аниме для рекомендаций по сходству:")
+
+# Ввод количества рекомендаций по косинусному сходству
+n_recommendations_cos = st.slider("Количество рекомендаций по сходству", min_value=1, max_value=20, value=10)
+
+# Получить рекомендации по косинусному сходству
+if anime_name_cos:
+    recommendations_cos = get_cos_recommendations(anime_name_cos, n_recommendations_cos)
+    if recommendations_cos:
+        st.write(f"Рекомендации по сходству для аниме '{anime_name_cos}':")
+        for rec in recommendations_cos:
+            st.write(f"- {rec[0]}")
+
+# Рекомендации по KNN
+st.header('Рекомендации по KNN')
+
+# Ввод названия аниме для рекомендаций по KNN
+anime_name_knn = st.text_input("Введите название аниме для рекомендаций по KNN:")
+
+# Получить рекомендации по KNN
+if anime_name_knn:
+    recommendations_knn = get_knn_recommendations(anime_name_knn)
+    if recommendations_knn:
+        st.write(f"Рекомендации для аниме '{anime_name_knn}':")
+        for idx, rec in enumerate(recommendations_knn, 1):
+            st.write(f"{idx}. {rec['anime']}")
+
+# Рекомендации по жанру
+st.header('Рекомендации по жанру')
+
+# Ввод жанра для рекомендаций
+genre_name = st.text_input("Введите жанр для рекомендаций:")
+
+# Ввод количества рекомендаций по жанру
+top_n_genre = st.slider("Количество рекомендаций по жанру", min_value=1, max_value=20, value=10)
+
+# Получить рекомендации по жанру
+if genre_name:
+    recommendations_genre = get_genre_recommendations(genre_name, top_n_genre)
+    if recommendations_genre:
+        st.write(f"Рекомендации для жанра '{genre_name}':")
+        for idx, rec in enumerate(recommendations_genre, 1):
+            st.write(f"{idx}. {rec}")
