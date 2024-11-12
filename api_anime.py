@@ -3,10 +3,23 @@ import requests
 
 API_URL = "http://127.0.0.1:8000"
 
+# Функция для получения топа аниме
+def get_top_anime():
+    try:
+        response = requests.post(f"{API_URL}/top_anime/")
+        response.raise_for_status()
+        top_anime = response.json().get("unique_anime_titles", [])
+        return top_anime
+    except requests.exceptions.RequestException as e:
+        st.error(f"Ошибка запроса: {e}")
+        return []
+
+
 # Функция для получения рекомендаций по косинусному сходству
-def get_cos_recommendations(anime_name, n_recommendations):
+def get_cos_recommendations(anime_name, n_recommendations_cos):
     response = requests.post(f"{API_URL}/cos_recommendations/", json={
-        "anime_name": anime_name
+        "anime_name": anime_name,
+        "n_recommendations_cos": n_recommendations_cos
     })
 
     if response.status_code == 200:
@@ -44,10 +57,22 @@ def get_genre_recommendations(genre_name, top_n):
         return []
 
 
+
 # Streamlit интерфейс
 st.title('Рекомендательная система для аниме')
 
-# Раздел для рекомендаций по косинусному сходству
+# Топ аниме
+st.header('Топ-10 аниме')
+
+# Кнопка для загрузки топа аниме
+if st.button("Показать топ аниме"):
+    top_anime = get_top_anime()
+    if top_anime:
+        st.write("Топ аниме:")
+        for idx, anime in enumerate(top_anime, start=1):
+            st.write(f"{idx}. {anime['name']} (рейтинг: {anime['rating']})")
+
+# Рекомендации по косинусному сходству
 st.header('Рекомендации по косинусному сходству')
 
 # Ввод названия аниме для рекомендаций по сходству
@@ -64,6 +89,7 @@ if anime_name_cos:
         for rec in recommendations_cos:
             st.write(f"- {rec[0]}")
 
+
 # Рекомендации по KNN
 st.header('Рекомендации по KNN')
 
@@ -77,6 +103,7 @@ if anime_name_knn:
         st.write(f"Рекомендации для аниме '{anime_name_knn}':")
         for idx, rec in enumerate(recommendations_knn, 1):
             st.write(f"{idx}. {rec['anime']}")
+
 
 # Рекомендации по жанру
 st.header('Рекомендации по жанру')
@@ -94,3 +121,11 @@ if genre_name:
         st.write(f"Рекомендации для жанра '{genre_name}':")
         for idx, rec in enumerate(recommendations_genre, 1):
             st.write(f"{idx}. {rec}")
+
+st.write("## API-методы:")
+st.write("1. **Топ-10 аниме**: Метод для получения 10 лучших аниме по рейтингу.")
+st.write("2. **Косинусное сходство**: Возвращает список похожих аниме на основе косинусного сходства выбранного количества.")
+st.write("3. **Рекомендаци по KNN**: Возвращает список аниме, похожих на указанное.")
+st.write("4. **Рекомендации по жанру**: Возвращает лучшие аниме по указанному жанру на основе косинусного"
+                                                            " сходства такого количества, сколько выбрали.")
+
